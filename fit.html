@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kaizen Trainer | 改善</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&family=Noto+Sans+JP:wght@100;400;700&display=swap');
+
+        :root {
+            --bg-cream: #FAF9F0;
+            --wine-red: #722F37;
+            --military-green: #556B2F;
+            --white: #ffffff;
+            --gray-line: rgba(114, 47, 55, 0.1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            background-color: var(--bg-cream);
+            color: var(--wine-red);
+            font-family: 'Space Grotesk', sans-serif;
+            min-height: 100vh;
+            padding-bottom: 80px; /* Espaço para footer */
+        }
+
+        /* --- HEADER & NAV --- */
+        header {
+            padding: 20px; text-align: center;
+            border-bottom: 1px solid var(--wine-red);
+            background: var(--bg-cream);
+            position: sticky; top: 0; z-index: 10;
+        }
+        h1 { font-size: 1.5rem; font-weight: 800; letter-spacing: -1px; margin: 0; }
+        .jp-sub { font-family: 'Noto Sans JP'; font-size: 0.7rem; color: var(--military-green); font-weight: bold; letter-spacing: 2px; }
+
+        /* --- HOME: SELETOR DE TREINOS --- */
+        .home-grid { display: grid; grid-template-columns: 1fr; gap: 15px; padding: 20px; max-width: 600px; margin: 0 auto; }
+        
+        .workout-card-select {
+            background: var(--white); border: 1px solid var(--wine-red);
+            padding: 25px; cursor: pointer; transition: 0.2s;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 4px 4px 0 rgba(85, 107, 47, 0.1);
+        }
+        .workout-card-select:active { transform: scale(0.98); box-shadow: 2px 2px 0 rgba(85, 107, 47, 0.1); }
+        .wc-title { font-weight: bold; font-size: 1.2rem; text-transform: uppercase; }
+        .wc-desc { font-size: 0.8rem; color: #666; margin-top: 5px; }
+        .wc-arrow { color: var(--military-green); font-size: 1.5rem; }
+
+        /* --- WORKOUT VIEW --- */
+        #workout-view { display: none; max-width: 600px; margin: 0 auto; }
+        
+        /* TABS (EXECUÇÃO vs HISTÓRICO) */
+        .tabs { display: flex; border-bottom: 1px solid var(--wine-red); background: #f4f3ea; }
+        .tab { 
+            flex: 1; text-align: center; padding: 15px; cursor: pointer; 
+            font-weight: bold; font-size: 0.9rem; color: #888;
+        }
+        .tab.active { background: var(--bg-cream); color: var(--wine-red); border-bottom: 3px solid var(--wine-red); }
+
+        .tab-content { display: none; padding: 20px; animation: fade 0.3s; }
+        .tab-content.active { display: block; }
+        @keyframes fade { from{opacity:0} to{opacity:1} }
+
+        /* EXECUÇÃO UI */
+        .ex-block { margin-bottom: 30px; border-bottom: 1px dashed var(--gray-line); padding-bottom: 20px; }
+        .ex-header { display: flex; justify-content: space-between; margin-bottom: 10px; align-items: flex-end; }
+        .ex-name { font-weight: 800; font-size: 1.1rem; text-transform: uppercase; }
+        .ex-target { font-size: 0.75rem; background: var(--wine-red); color: #fff; padding: 2px 6px; border-radius: 4px; }
+        
+        .set-row { display: grid; grid-template-columns: 0.4fr 1fr 1fr; gap: 10px; margin-bottom: 8px; align-items: center; }
+        .set-idx { font-size: 0.8rem; font-weight: bold; color: var(--military-green); }
+        
+        input {
+            width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;
+            font-family: 'Space Grotesk'; font-size: 1rem; text-align: center; color: var(--wine-red);
+            background: #fafafa; -webkit-appearance: none;
+        }
+        input:focus { border-color: var(--military-green); background: #fff; outline: none; }
+        
+        /* TIMELINE UI (HISTORY) */
+        .history-card { 
+            background: white; border-left: 4px solid var(--military-green); 
+            padding: 15px; margin-bottom: 15px; box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
+        }
+        .h-date { font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; display: flex; justify-content: space-between;}
+        .h-exercise { margin-top: 10px; font-size: 0.9rem; }
+        .h-name { font-weight: bold; color: var(--wine-red); font-size: 0.85rem;}
+        .h-sets { font-family: monospace; font-size: 0.8rem; color: #555; margin-left: 10px; margin-top: 2px; }
+
+        /* FOOTER ACTIONS */
+        .bottom-actions {
+            position: fixed; bottom: 0; left: 0; width: 100%; 
+            background: var(--bg-cream); border-top: 1px solid var(--wine-red);
+            padding: 15px; display: flex; gap: 10px; z-index: 100;
+        }
+        .btn {
+            flex: 1; padding: 12px; border: none; font-weight: bold; cursor: pointer;
+            text-transform: uppercase; font-family: 'Space Grotesk'; font-size: 0.9rem;
+        }
+        .btn-save { background: var(--wine-red); color: white; }
+        .btn-cancel { background: transparent; color: var(--wine-red); border: 1px solid var(--wine-red); flex: 0.4; }
+        
+        .whatsapp-float {
+            margin-top: 20px; width: 100%; padding: 12px;
+            background: #25D366; color: white; border: none; font-weight: bold;
+            display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer;
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>KAIZEN TRAINER</h1>
+        <div class="jp-sub">継続的な改善 // PROGRESSO</div>
+    </header>
+
+    <div id="home-view" class="home-grid">
+        </div>
+
+    <div id="workout-view">
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('train')">EXECUÇÃO</div>
+            <div class="tab" onclick="switchTab('history')">HISTÓRICO</div>
+        </div>
+
+        <div id="tab-train" class="tab-content active">
+            <h2 id="wk-title-display" style="margin: 10px 0 20px; text-align: center; font-size:1.2rem;"></h2>
+            <div id="exercises-container"></div>
+            <div style="height: 60px;"></div> </div>
+
+        <div id="tab-history" class="tab-content">
+            <div id="history-container"></div>
+        </div>
+
+        <div class="bottom-actions">
+            <button class="btn btn-cancel" onclick="goHome()">VOLTAR</button>
+            <button class="btn btn-save" onclick="saveWorkout()">CONCLUIR TREINO</button>
+        </div>
+    </div>
+
+<script>
+    // =========================================
+    // 1. DADOS DO TREINO (Edite aqui)
+    // =========================================
+    const workouts = {
+        "A": {
+            title: "TREINO A (Peito/Tríceps)",
+            exercises: [
+                { id: "supino_inc", name: "Supino Inclinado", sets: 3 },
+                { id: "supino_ret", name: "Supino Reto", sets: 3 },
+                { id: "crucifixo", name: "Crucifixo", sets: 3 },
+                { id: "triceps_corda", name: "Tríceps Corda", sets: 4 },
+                { id: "triceps_testa", name: "Tríceps Testa", sets: 3 }
+            ]
+        },
+        "B": {
+            title: "TREINO B (Costas/Bíceps)",
+            exercises: [
+                { id: "puxada", name: "Puxada Alta", sets: 3 },
+                { id: "remada", name: "Remada Baixa", sets: 3 },
+                { id: "serrote", name: "Remada Serrote", sets: 3 },
+                { id: "rosca_dir", name: "Rosca Direta", sets: 3 },
+                { id: "rosca_alt", name: "Rosca Alternada", sets: 3 }
+            ]
+        },
+        "C": {
+            title: "TREINO C (Pernas/Ombro)",
+            exercises: [
+                { id: "agachamento", name: "Agachamento", sets: 4 },
+                { id: "leg", name: "Leg Press", sets: 3 },
+                { id: "extensora", name: "Extensora", sets: 3 },
+                { id: "flexora", name: "Flexora", sets: 3 },
+                { id: "desenv", name: "Desenvolvimento", sets: 4 },
+                { id: "elev_lat", name: "Elevação Lateral", sets: 4 }
+            ]
+        }
+    };
+
+    // =========================================
+    // 2. SISTEMA (LocalStorage 'Database')
+    // =========================================
+    // Estrutura do BD: [ { date, workoutId, data: { exId: [ {w, r}, {w, r} ] } } ]
+    let db = JSON.parse(localStorage.getItem('kaizenDB')) || [];
+    let currentWorkoutId = null;
+
+    // --- INICIALIZAÇÃO ---
+    function init() {
+        const home = document.getElementById('home-view');
+        home.innerHTML = '';
+        Object.keys(workouts).forEach(key => {
+            const w = workouts[key];
+            home.innerHTML += `
+                <div class="workout-card-select" onclick="openWorkout('${key}')">
+                    <div>
+                        <div class="wc-title">${w.title}</div>
+                        <div class="wc-desc">${w.exercises.length} Exercícios</div>
+                    </div>
+                    <div class="wc-arrow">→</div>
+                </div>
+            `;
+        });
+    }
+
+    // --- ABRIR TREINO ---
+    function openWorkout(id) {
+        currentWorkoutId = id;
+        document.getElementById('home-view').style.display = 'none';
+        document.getElementById('workout-view').style.display = 'block';
+        document.getElementById('wk-title-display').innerText = workouts[id].title;
+
+        // Render inputs
+        renderInputs(id);
+        // Render history
+        renderHistory(id);
+        
+        // Reset tab
+        switchTab('train');
+        window.scrollTo(0,0);
+    }
+
+    function goHome() {
+        if(confirm("Sair sem salvar?")) {
+            document.getElementById('workout-view').style.display = 'none';
+            document.getElementById('home-view').style.display = 'grid';
+        }
+    }
+
+    function switchTab(tab) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        
+        if(tab === 'train') {
+            document.querySelector('.tab:nth-child(1)').classList.add('active');
+            document.getElementById('tab-train').classList.add('active');
+        } else {
+            document.querySelector('.tab:nth-child(2)').classList.add('active');
+            document.getElementById('tab-history').classList.add('active');
+            renderHistory(currentWorkoutId); // Refresh history ao clicar
+        }
+    }
+
+    // --- RENDERIZAR INPUTS (ABA 1) ---
+    function renderInputs(id) {
+        const container = document.getElementById('exercises-container');
+        container.innerHTML = '';
+        const plan = workouts[id];
+
+        // Buscar dados do ÚLTIMO treino desse tipo para sugerir cargas
+        const lastSession = db.filter(s => s.workoutId === id).sort((a,b) => new Date(b.date) - new Date(a.date))[0];
+
+        plan.exercises.forEach(ex => {
+            let setsHtml = '';
+            
+            for(let i=0; i < ex.sets; i++) {
+                // Tenta pegar peso anterior
+                let prevWeight = '';
+                let prevReps = '';
+                if(lastSession && lastSession.data[ex.id] && lastSession.data[ex.id][i]) {
+                    prevWeight = lastSession.data[ex.id][i].w;
+                    prevReps = lastSession.data[ex.id][i].r;
+                }
+
+                setsHtml += `
+                    <div class="set-row">
+                        <span class="set-idx">SÉRIE ${i+1}</span>
+                        <input type="number" class="inp-w" data-ex="${ex.id}" data-s="${i}" placeholder="kg ${prevWeight ? '('+prevWeight+')' : ''}" value="${prevWeight}">
+                        <input type="number" class="inp-r" data-ex="${ex.id}" data-s="${i}" placeholder="reps ${prevReps ? '('+prevReps+')' : ''}">
+                    </div>
+                `;
+            }
+
+            container.innerHTML += `
+                <div class="ex-block">
+                    <div class="ex-header">
+                        <span class="ex-name">${ex.name}</span>
+                        <span class="ex-target">${ex.sets} Séries</span>
+                    </div>
+                    ${setsHtml}
+                </div>
+            `;
+        });
+    }
+
+    // --- RENDERIZAR HISTÓRICO (ABA 2) ---
+    function renderHistory(id) {
+        const container = document.getElementById('history-container');
+        container.innerHTML = '';
+        
+        // Filtra treinos desse ID
+        const history = db.filter(s => s.workoutId === id).sort((a,b) => new Date(b.date) - new Date(a.date));
+
+        if(history.length === 0) {
+            container.innerHTML = '<p style="text-align:center; color:#999; margin-top:20px;">Nenhum histórico registrado.</p>';
+            return;
+        }
+
+        history.forEach(session => {
+            const dateStr = new Date(session.date).toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', year:'2-digit', hour:'2-digit', minute:'2-digit'});
+            
+            let exercisesHtml = '';
+            const plan = workouts[id]; // Pega nomes do plano atual
+
+            // Itera sobre os dados salvos
+            for (const [exId, sets] of Object.entries(session.data)) {
+                // Encontrar nome do exercício
+                const exName = plan.exercises.find(e => e.id === exId)?.name || exId;
+                
+                // Formatar sets: "12kg(10) | 12kg(10)"
+                const setsStr = sets.map((s, idx) => `S${idx+1}: <strong>${s.w}kg</strong>/${s.r}r`).join(' • ');
+
+                exercisesHtml += `
+                    <div class="h-exercise">
+                        <div class="h-name">${exName}</div>
+                        <div class="h-sets">${setsStr}</div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML += `
+                <div class="history-card">
+                    <div class="h-date"><span>${dateStr}</span> <span style="font-size:0.7rem; color:green;">CONCLUÍDO</span></div>
+                    ${exercisesHtml}
+                </div>
+            `;
+        });
+    }
+
+    // --- SALVAR E COMPARTILHAR ---
+    function saveWorkout() {
+        const inputsW = document.querySelectorAll('.inp-w');
+        const inputsR = document.querySelectorAll('.inp-r');
+        
+        let sessionData = {};
+        let hasData = false;
+
+        // Coleta dados
+        inputsW.forEach((inpW, idx) => {
+            const exId = inpW.dataset.ex;
+            const setIdx = inpW.dataset.s;
+            const w = inpW.value;
+            const r = inputsR[idx].value;
+
+            if(w && r) {
+                hasData = true;
+                if(!sessionData[exId]) sessionData[exId] = [];
+                sessionData[exId][setIdx] = { w, r };
+            }
+        });
+
+        if(!hasData) return alert("Preencha pelo menos uma série!");
+
+        // Salva no DB Local
+        const newSession = {
+            id: Date.now(),
+            date: new Date().toISOString(),
+            workoutId: currentWorkoutId,
+            data: sessionData
+        };
+
+        db.push(newSession);
+        localStorage.setItem('kaizenDB', JSON.stringify(db));
+
+        // Pergunta sobre WhatsApp
+        if(confirm("Treino salvo! Deseja enviar o relatório no WhatsApp?")) {
+            shareWhatsapp(newSession);
+        } else {
+            document.getElementById('workout-view').style.display = 'none';
+            document.getElementById('home-view').style.display = 'grid';
+            init(); // Recarrega home
+        }
+    }
+
+    function shareWhatsapp(session) {
+        const plan = workouts[session.workoutId];
+        let text = `*KAIZEN REPORT - ${new Date().toLocaleDateString()}*\n`;
+        text += `Treino: ${plan.title}\n\n`;
+
+        for (const [exId, sets] of Object.entries(session.data)) {
+            const exName = plan.exercises.find(e => e.id === exId)?.name || exId;
+            text += `*${exName}*\n`;
+            sets.forEach((s, idx) => {
+                if(s) text += `- S${idx+1}: ${s.w}kg x ${s.r}\n`;
+            });
+            text += `\n`;
+        }
+
+        const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+        window.open(url, '_blank');
+        
+        // Volta pra home
+        document.getElementById('workout-view').style.display = 'none';
+        document.getElementById('home-view').style.display = 'grid';
+    }
+
+    init();
+
+</script>
+</body>
+</html>
